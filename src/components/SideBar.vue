@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer permanent width="260">
+  <v-navigation-drawer class="custom-drawer" width="260">
     <v-toolbar flat style="background-color: transparent">
       <v-toolbar-title class="font-weight-bold">
         Vue<span class="text-grey">Dashboard</span>
@@ -7,39 +7,22 @@
     </v-toolbar>
 
     <v-list nav>
-      <!-- <v-list-item
-        class="listItemHover"
-        title="Dashboard"
-        prepend-icon="mdi-view-dashboard"
-      /> -->
       <v-list-item
         class="listItemHover"
         title="Users"
-        @click="
-          $router.push({
-            name: 'UserS',
-          })
-        "
+        @click="$router.push({ name: 'UserS' })"
         prepend-icon="mdi-account-group"
       />
       <v-list-item
         class="listItemHover"
         title="Add User"
-        @click="
-          $router.push({
-            name: 'AddUser',
-          })
-        "
+        @click="$router.push({ name: 'AddUser' })"
         prepend-icon="mdi-account-plus"
       />
       <v-list-item
         class="listItemHover"
         title="Settings"
-        @click="
-          $router.push({
-            name: 'Settings',
-          })
-        "
+        @click="$router.push({ name: 'SettingsPage' })"
         prepend-icon="mdi-cog"
       />
     </v-list>
@@ -47,10 +30,14 @@
 </template>
 
 <script setup></script>
+
 <style scoped>
 .listItemHover:hover {
-  transition: 0.3ms all ease-in-out;
+  transition: 0.3s all ease-in-out;
   cursor: pointer;
   background-color: rgb(33, 150, 243, 0.2);
+}
+.custom-drawer {
+  transition: 0.3s all ease-in-out !important;
 }
 </style>

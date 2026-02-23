@@ -1,15 +1,15 @@
 <template>
   <v-app-bar flat style="border-bottom: 1px solid #e5e7eb">
-    <!-- Switch Layout -->
     <v-btn
       size="small"
       class="mx-3"
       color="primary"
       variant="tonal"
-      @click="$emit('switchLayout')"
+      @click="emit('switchLayout')"
     >
       <v-icon size="22">mdi-menu</v-icon>
     </v-btn>
+
     <v-toolbar-title class="font-weight-bold mx-0 px-0">
       Vue<span class="text-grey">Dashboard</span>
     </v-toolbar-title>
@@ -28,9 +28,12 @@
 <script setup>
 import { computed, defineEmits } from "vue";
 import { useTheme } from "vuetify";
-defineEmits(["switchLayout"]);
 
+// ترتيب الـ imports وتعريف الـ emits بالطريقة الصحيحة
+const emit = defineEmits(["switchLayout"]);
 const theme = useTheme();
+
+// نفس الشرط الأكيد هنا كمان
 
 const isDark = computed(() => theme.global.current.value.dark);
 

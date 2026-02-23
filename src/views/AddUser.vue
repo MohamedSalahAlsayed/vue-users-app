@@ -1,219 +1,204 @@
 <template>
-  <v-container class="mt-5 user-form-container" max-width="600px">
-    <!-- Title -->
-    <div class="mb-6">
-      <h1 class="form-title">Add New User</h1>
-      <p class="form-subtitle">
-        Fill in the details below to create a new user account.
-      </p>
-    </div>
+  <v-container>
+    <v-card class="pa-6 mx-auto" max-width="600" elevation="2">
+      <h2>{{ isEdit ? "Edit User" : "Add New User" }}</h2>
 
-    <form action="#" @submit.prevent="saveOrUpdateUser">
-      <div class="form-group">
-        <label class="form-label">Full Name</label>
-        <input
-          type="text"
-          v-model="objectUser.name"
-          placeholder="Enter full name"
-          required
-          class="form-control"
-        />
-      </div>
+      <v-form
+        ref="formRef"
+        v-model="isFormValid"
+        @submit.prevent="saveUser"
+        class="mt-4"
+      >
+        <v-text-field
+          v-model="user.name"
+          label="Full Name"
+          :rules="[rules.required]"
+          variant="outlined"
+        ></v-text-field>
 
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input
+        <v-text-field
+          v-model="user.email"
+          label="Email"
           type="email"
-          v-model="objectUser.email"
-          placeholder="Enter email address"
-          required
-          class="form-control"
-        />
-      </div>
+          :rules="[rules.required, rules.email]"
+          variant="outlined"
+        ></v-text-field>
 
-      <div class="form-group">
-        <label class="form-label">Role</label>
-        <select v-model="objectUser.role" class="form-control" required>
-          <option value="" disabled="">Select role</option>
-          <option value="admin">Admin</option>
-          <option value="user">User</option>
-        </select>
-      </div>
+        <v-select
+          v-model="user.role"
+          :items="['admin', 'user']"
+          label="Role"
+          :rules="[rules.required]"
+          variant="outlined"
+        ></v-select>
 
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input
-          type="password"
-          v-model="objectUser.password"
-          placeholder="Enter password"
-          required
-          class="form-control"
-        />
-      </div>
+        <v-text-field
+          v-if="isEdit"
+          v-model="user.createdAt"
+          label="Created At"
+          variant="outlined"
+          readonly
+          disabled
+          prepend-inner-icon="mdi-calendar"
+        ></v-text-field>
 
-      <div class="form-actions">
-        <v-btn variant="outlined" color="grey" class="mx-2" @click="resetForm">
-          Cancel
+        <div v-if="isEdit" class="mb-4">
+          <v-divider class="my-4"></v-divider>
+          <p class="text-subtitle-1 mb-2 text-grey">
+            Change Password (Optional)
+          </p>
+          <v-text-field
+            v-model="currentPassword"
+            label="Current Password"
+            type="password"
+            variant="outlined"
+            hint="Enter current password to change it"
+            persistent-hint
+          ></v-text-field>
+        </div>
+
+        <div v-if="!isEdit || (isEdit && isCurrentPasswordCorrect)">
+          <v-text-field
+            v-model="user.password"
+            label="New Password"
+            :type="showPassword ? 'text' : 'password'"
+            :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+            @click:append-inner="showPassword = !showPassword"
+            :rules="
+              isEdit && !user.password
+                ? []
+                : [
+                    rules.required,
+                    rules.min8,
+                    rules.hasUpper,
+                    rules.hasLower,
+                    rules.hasNumber,
+                  ]
+            "
+            variant="outlined"
+          ></v-text-field>
+
+          <v-text-field
+            v-model="confirmPassword"
+            label="Confirm New Password"
+            :type="showPassword ? 'text' : 'password'"
+            :rules="
+              isEdit && !user.password ? [] : [rules.required, matchPassword]
+            "
+            variant="outlined"
+          ></v-text-field>
+        </div>
+
+        <v-btn
+          type="submit"
+          color="primary"
+          class="mt-4"
+          size="large"
+          :disabled="!isFormValid"
+          block
+        >
+          {{ isEdit ? "Update User" : "Save User" }}
         </v-btn>
-
-        <v-btn color="primary" type="submit"> Add User </v-btn>
-      </div>
-    </form>
+      </v-form>
+    </v-card>
   </v-container>
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ref, onMounted } from "vue";
-const router = useRouter();
-const route = useRoute();
-const arrayUser = ref([]);
 
-const objectUser = ref({
+const route = useRoute();
+const router = useRouter();
+const formRef = ref(null);
+const isFormValid = ref(false);
+const showPassword = ref(false);
+
+const isEdit = computed(() => !!route.query.id);
+
+const user = ref({
   id: "",
   name: "",
   email: "",
   role: "",
   password: "",
-  createdAt: "",
+  createdAt: "", // ضفنا الحقل هنا
 });
-const userList = () => {
-  localStorage.setItem("user", JSON.stringify(arrayUser.value));
+
+const currentPassword = ref("");
+const confirmPassword = ref("");
+const actualCurrentPassword = ref("");
+
+const isCurrentPasswordCorrect = computed(() => {
+  return (
+    currentPassword.value === actualCurrentPassword.value &&
+    currentPassword.value !== ""
+  );
+});
+
+const rules = {
+  required: (v) => !!v || "This field is required",
+  email: (v) => /.+@.+\..+/.test(v) || "E-mail must be valid",
+  min8: (v) => (v && v.length >= 8) || "Must be at least 8 characters",
+  hasUpper: (v) =>
+    /(?=.*[A-Z])/.test(v) || "Must contain at least one uppercase letter",
+  hasLower: (v) =>
+    /(?=.*[a-z])/.test(v) || "Must contain at least one lowercase letter",
+  hasNumber: (v) => /(?=.*\d)/.test(v) || "Must contain at least one number",
 };
-const updateUser = () => {
-  const savedData = localStorage.getItem("user");
-  if (savedData) {
-    arrayUser.value = JSON.parse(savedData);
-  }
-};
-const saveOrUpdateUser = () => {
-  updateUser();
 
-  if (objectUser.value.id) {
-    const index = arrayUser.value.findIndex(
-      (userId) => userId.id == objectUser.value.id
-    );
+const matchPassword = (v) =>
+  v === user.value.password || "Passwords do not match";
 
-    if (index !== -1) {
-      arrayUser.value[index] = {
-        ...arrayUser.value[index],
-        ...objectUser.value,
-      };
-    }
-  } else {
-    objectUser.value.id = Date.now();
-    objectUser.value.createdAt = new Date();
-    arrayUser.value.push(objectUser.value);
-  }
-
-  userList();
-
-  resetForm();
-
-  router.push("/");
-};
-const resetForm = () => {
-  objectUser.value = {
-    name: "",
-    email: "",
-    role: "",
-    password: "",
-  };
-};
 onMounted(() => {
-  updateUser();
-  if (route.query.id) {
-    objectUser.value = {
-      id: route.query.id,
-      name: route.query.name,
-      email: route.query.email,
-      role: route.query.role,
-      password: route.query.password,
-    };
+  if (isEdit.value) {
+    user.value.id = route.query.id;
+    user.value.name = route.query.name;
+    user.value.email = route.query.email;
+    user.value.role = route.query.role;
+    user.value.createdAt = route.query.createdAt; // استلام التاريخ من الرابط
+    actualCurrentPassword.value = route.query.password;
+    user.value.password = "";
   }
 });
+
+const saveUser = async () => {
+  const { valid } = await formRef.value.validate();
+  if (valid) {
+    let users = JSON.parse(localStorage.getItem("user")) || [];
+
+    if (isEdit.value) {
+      const index = users.findIndex((u) => u.id === user.value.id);
+      if (index !== -1) {
+        // لو مغيرش الباسورد، رجع الباسورد القديم
+        const passwordToSave =
+          user.value.password || actualCurrentPassword.value;
+
+        users[index] = {
+          ...user.value,
+          password: passwordToSave,
+        };
+
+        // تحديث الـ Session لو اليوزر بيعدل بيانات نفسه
+        const currentUser = JSON.parse(
+          localStorage.getItem("currentUser") || "{}"
+        );
+        if (currentUser.id === user.value.id) {
+          localStorage.setItem("currentUser", JSON.stringify(users[index]));
+        }
+      }
+    } else {
+      const newUser = {
+        ...user.value,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      users.push(newUser);
+    }
+
+    localStorage.setItem("user", JSON.stringify(users));
+    alert("Saved Successfully!");
+    router.push({ name: "UserS" });
+  }
+};
 </script>
-
-<style scoped>
-.user-form-container {
-  background-color: var(--v-surface-base);
-  border-radius: 16px;
-  padding: 20px 22px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.form-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--v-theme-on-surface);
-  margin-bottom: 6px;
-}
-
-.form-subtitle {
-  color: #6b7280;
-  font-size: 14px;
-  margin-bottom: 24px;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.v-btn {
-  text-transform: none;
-  font-weight: 600;
-  border-radius: 8px;
-  min-width: 120px;
-}
-
-/* Hover effects */
-.v-btn:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.form-group {
-  margin-bottom: 1rem;
-  text-align: justify;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 900;
-  /* color: #212529; */
-  font-size: 14px;
-}
-
-.form-control {
-  display: block;
-  width: 100%;
-  padding: 0.375rem 0.75rem;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.5;
-  /* color: #495057; */
-  background-color: #fff;
-  background-clip: padding-box;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-/* Focus */
-.form-control:focus {
-  color: #495057;
-  background-color: #fff;
-  border-color: #86b7fe;
-  outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-}
-
-/* Placeholder */
-.form-control::placeholder {
-  color: #6c757d;
-  opacity: 1;
-}
-</style>

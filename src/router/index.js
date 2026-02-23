@@ -1,39 +1,51 @@
-import { createRouter, createWebHistory } from "vue-router";
-import AddUser from "../views/AddUser.vue";
+import { createRouter, createWebHashHistory } from "vue-router";
 import UserS from "../views/UserS.vue";
-import DashBoard from "@/views/DashBoard.vue";
-import Settings from "../views/SettingDash.vue";
+import AddUser from "../views/AddUser.vue";
+import SettingsPage from "../views/SettingsPage.vue";
+import LoginPage from "../views/LoginPage.vue";
+import RegisterPage from "../views/RegisterPage.vue"; // ضفنا صفحة التسجيل
+
 const routes = [
   {
-    path: "/",
-    name: "DashBoard",
-    component: DashBoard,
+    path: "/LoginPage",
+    name: "LoginPage",
+    component: LoginPage,
+    meta: { hideLayout: true },
   },
   {
-    path: "/AddUser",
-    name: "AddUser",
-    component: AddUser,
-  },
+    path: "/RegisterPage",
+    name: "RegisterPage",
+    component: RegisterPage,
+    meta: { hideLayout: true },
+  }, // مسار التسجيل
+  { path: "/", name: "UserS", component: UserS },
+  { path: "/AddUser", name: "AddUser", component: AddUser },
+  { path: "/settingsPage", name: "SettingsPage", component: SettingsPage },
   {
-    path: "/UserS",
-    name: "UserS",
-    component: UserS,
-  },
-  {
-    path: "/Settings",
-    name: "Settings",
-    component: Settings,
-  },
-  {
-    path: "/:pathMatch(.*)*",
-    name: "NotFound",
-    component: () => import("../views/NotFound.vue"),
+    path: "/ProfilePage",
+    name: "ProfilePage",
+    component: () => import("../views/ProfilePage.vue"),
   },
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
+});
+
+router.beforeEach((to, from, next) => {
+  const isLoggedIn = !!localStorage.getItem("token");
+  // الصفحات المسموح دخولها من غير لوجن
+  const publicPages = ["LoginPage", "RegisterPage"];
+  const authRequired = !publicPages.includes(to.name);
+
+  if (authRequired && !isLoggedIn) {
+    next({ name: "LoginPage" });
+  } else if (!authRequired && isLoggedIn) {
+    next({ name: "UserS" });
+  } else {
+    next();
+  }
 });
 
 export default router;

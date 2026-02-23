@@ -95,6 +95,7 @@ const editUser = (index) => {
       email: userToEdit.email,
       role: userToEdit.role,
       password: userToEdit.password,
+      createdAt: userToEdit.createdAt, // ضفنا السطر ده عشان التاريخ يتبعت
     },
   });
 };
@@ -102,7 +103,7 @@ onMounted(() => {
   updateUser();
 });
 </script>
-<style>
+<style scoped lang="scss">
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -183,6 +184,9 @@ tbody tr:last-child {
 
 tbody tr:hover {
   background-color: #f9fafb;
+  .user-details h3 {
+    color: #333;
+  }
 }
 
 td {
